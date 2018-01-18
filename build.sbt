@@ -6,6 +6,8 @@ lazy val kfkstreams = project
   .settings(settings)
   .settings(
     libraryDependencies ++= Seq(library.kafkaStreamsScala,
+                                library.kafka,
+                                library.curator,
                                 library.catsCore,
                                 library.logback,
                                 library.scalaLogging,
@@ -22,11 +24,15 @@ lazy val library = new {
     val scalaLogging = "3.7.2"
 
     val kafkaStreamsScala = "0.1.1"
-    val embeddedKafka     = "1.0.0"
+    val kafka             = "1.0.0"
+    val curator           = "4.0.0"
   }
 
   val kafkaStreamsScala = "com.lightbend" %%
   "kafka-streams-scala" % Version.kafkaStreamsScala
+
+  val kafka   = "org.apache.kafka"   %% "kafka"       % Version.kafka
+  val curator = "org.apache.curator" % "curator-test" % Version.curator
 
   val logback      = "ch.qos.logback"             % "logback-classic" % Version.logback
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging"  % Version.scalaLogging
@@ -59,7 +65,7 @@ lazy val commonSettings =
       //"-Xexperimental",
       "-feature", // warn about misused language features
       "-Xlint", // enable handy linter warnings
-      "-Xfatal-warnings", // turn compiler warnings into errors
+//      "-Xfatal-warnings", // turn compiler warnings into errors
       "-Ypartial-unification" // allow the compiler to unify type constructors of different arities
     ),
     unmanagedSourceDirectories.in(Compile) := Seq(scalaSource.in(Compile).value),
