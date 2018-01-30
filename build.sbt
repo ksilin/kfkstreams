@@ -15,6 +15,7 @@ lazy val kfkstreams = project
       library.kafkabase,
       library.circe,
       library.circeGeneric,
+      library.circeParser,
       library.circeJ8,
       library.scalaCheck % Test,
       library.scalaTest  % Test
@@ -29,7 +30,7 @@ lazy val library = new {
     val logback      = "1.2.3"
     val scalaLogging = "3.7.2"
 
-    val kafkabase = "0.1.5"
+    val kafkabase = "0.1.6"
     val circe     = "0.9.1"
 
     val kafkaStreamsScala = "0.1.1"

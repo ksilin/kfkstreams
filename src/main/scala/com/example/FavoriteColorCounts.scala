@@ -78,7 +78,7 @@ object FavoriteColorCounts {
       // 3 - we get the colour from the value (lowercase for safety)
       .mapValues[String]((value: String) => value.split(",")(1).toLowerCase)
       // 4 - we filter undesired colours (could be a data sanitization step)
-      .filter((user: String, colour: String) => List("green", "blue", "red").contains(colour))
+      .filter((_: String, colour: String) => List("green", "blue", "red").contains(colour))
 
     usersAndColours.to(intermediaryTopic)
 

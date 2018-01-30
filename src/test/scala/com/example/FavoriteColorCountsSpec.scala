@@ -23,11 +23,6 @@ class FavoriteColorCountsSpec
     with BeforeAndAfterAll
     with LocalTestSettings {
 
-  class PrintingRecordProcessor extends RecordProcessor[String, Long] {
-    override def processRecord(record: ConsumerRecord[String, Long]): Unit =
-      println(s"Get Message $record")
-  }
-
   val inputTopic        = "colorcount-in"
   val outputTopic       = "colorcount-out"
   val intermediateTopic = "user-keys-and-colours-scala"
