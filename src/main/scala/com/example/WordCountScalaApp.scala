@@ -47,5 +47,5 @@ object WordCountScalaApp extends App {
   wordCounts.toStream.to(outTopic, produced)
   val streams = new KafkaStreams(builder.build(), conf)
   streams.start()
-
+  sys.addShutdownHook(streams.close())
 }

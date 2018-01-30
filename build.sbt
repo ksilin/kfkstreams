@@ -5,14 +5,20 @@ lazy val kfkstreams = project
   .enablePlugins(JavaAppPackaging)
   .settings(settings)
   .settings(
-    libraryDependencies ++= Seq(library.kafkaStreamsScala,
-                                library.kafka,
-                                library.curator,
-                                library.catsCore,
-                                library.logback,
-                                library.scalaLogging,
-                                library.scalaCheck % Test,
-                                library.scalaTest  % Test),
+    libraryDependencies ++= Seq(
+      library.kafkaStreamsScala,
+      library.kafka,
+      library.curator,
+      library.catsCore,
+      library.logback,
+      library.scalaLogging,
+      library.kafkabase,
+      library.circe,
+      library.circeGeneric,
+      library.circeJ8,
+      library.scalaCheck % Test,
+      library.scalaTest  % Test
+    ),
     excludeDependencies += "org.slf4j" % "slf4j-log4j12"
   )
 
@@ -22,6 +28,9 @@ lazy val library = new {
     val scalaTest    = "3.0.4"
     val logback      = "1.2.3"
     val scalaLogging = "3.7.2"
+
+    val kafkabase = "0.1.5"
+    val circe     = "0.9.1"
 
     val kafkaStreamsScala = "0.1.1"
     val kafka             = "1.0.0"
@@ -37,6 +46,13 @@ lazy val library = new {
   val logback      = "ch.qos.logback"             % "logback-classic" % Version.logback
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging"  % Version.scalaLogging
   val catsCore     = "org.typelevel"              %% "cats-core"      % "1.0.0"
+
+  val circe        = "io.circe" %% "circe-core"    % Version.circe
+  val circeGeneric = "io.circe" %% "circe-generic" % Version.circe
+  val circeParser  = "io.circe" %% "circe-parser"  % Version.circe
+  val circeJ8      = "io.circe" %% "circe-java8"   % Version.circe
+
+  val kafkabase = "de.exellio" %% "kafkabase" % Version.kafkabase
 
   val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
   val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
@@ -64,7 +80,7 @@ lazy val commonSettings =
       "UTF-8",
       //"-Xexperimental",
       "-feature", // warn about misused language features
-      "-Xlint", // enable handy linter warnings
+      "-Xlint",   // enable handy linter warnings
 //      "-Xfatal-warnings", // turn compiler warnings into errors
       "-Ypartial-unification" // allow the compiler to unify type constructors of different arities
     ),

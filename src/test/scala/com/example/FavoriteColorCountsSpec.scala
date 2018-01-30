@@ -2,6 +2,7 @@ package com.example
 
 import java.util.Properties
 
+import de.exellio.kafkabase.test.{ MessageListener, MessageSender, RecordProcessor }
 import kafka.admin.{ AdminUtils, RackAwareMode }
 import kafka.utils.ZkUtils
 import org.apache.kafka.clients.consumer.{ ConsumerConfig, ConsumerRecord }
@@ -16,13 +17,13 @@ import org.scalatest.{ BeforeAndAfterAll, FreeSpec, MustMatchers }
 
 import scala.util.Try
 
-class FavoriteColorCountsSpec extends FreeSpec with MustMatchers with BeforeAndAfterAll {
+class FavoriteColorCountsSpec
+    extends FreeSpec
+    with MustMatchers
+    with BeforeAndAfterAll
+    with LocalTestSettings {
 
-  var localStateDir  = "local_state_data"
-  val brokers        = "localhost:9092"
-  private val zkHost = s"localhost:2181"
-
-  class RecordProcessor extends RecordProcessorTrait[String, Long] {
+  class PrintingRecordProcessor extends RecordProcessor[String, Long] {
     override def processRecord(record: ConsumerRecord[String, Long]): Unit =
       println(s"Get Message $record")
   }
@@ -36,15 +37,6 @@ class FavoriteColorCountsSpec extends FreeSpec with MustMatchers with BeforeAndA
 //    deleteTopic(outputTopic)
 //    deleteTopic(intermediateTopic)
   }
-
-  private val DEFAULT_ZK_SESSION_TIMEOUT_MS    = 10 * 1000
-  private val DEFAULT_ZK_CONNECTION_TIMEOUT_MS = 8 * 1000
-
-  val zkUtils: ZkUtils =
-    ZkUtils.apply(zkHost,
-                  DEFAULT_ZK_SESSION_TIMEOUT_MS,
-                  DEFAULT_ZK_CONNECTION_TIMEOUT_MS,
-                  isZkSecurityEnabled = false)
 
   def deleteTopic(topic: String): Unit = AdminUtils.deleteTopic(zkUtils, topic)
 
@@ -72,11 +64,12 @@ class FavoriteColorCountsSpec extends FreeSpec with MustMatchers with BeforeAndA
 
   val properties = Map(
     StreamsConfig.APPLICATION_ID_CONFIG            -> "color_count_spec",
-    StreamsConfig.BOOTSTRAP_SERVERS_CONFIG         -> "localhost:9092",
+    StreamsConfig.BOOTSTRAP_SERVERS_CONFIG         -> brokers,
     ConsumerConfig.AUTO_OFFSET_RESET_CONFIG        -> "earliest",
     StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG   -> Serdes.String().getClass,
     StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG -> Serdes.String().getClass,
-    StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG -> "0" // THIS IS ESSENTIAL TO SEE ANY PROCESSING FROM INTERMEDIATE TOPIC
+    StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG -> "0", // THIS IS ESSENTIAL TO SEE ANY PROCESSING FROM INTERMEDIATE TOPIC
+    StreamsConfig.COMMIT_INTERVAL_MS_CONFIG        -> "100" // unfortunately, in combination with caching, this is not sufficient to push data downstream
   )
   val conf: Properties = properties.toProps
 
@@ -92,7 +85,8 @@ class FavoriteColorCountsSpec extends FreeSpec with MustMatchers with BeforeAndA
     println("topology: ")
     println(topology.describe())
     val streams = new KafkaStreams(topology, conf)
-    streams.cleanUp()
+
+    streams.cleanUp() // dont do this in prod
     streams.start()
 
     val listener = MessageListener(brokers,
@@ -100,11 +94,12 @@ class FavoriteColorCountsSpec extends FreeSpec with MustMatchers with BeforeAndA
                                    "colorcountGroup",
                                    classOf[StringDeserializer].getName,
                                    classOf[LongDeserializer].getName,
-                                   new RecordProcessor)
+                                   new PrintingRecordProcessor)
 
     val l = listener.waitUntilMinKeyValueRecordsReceived(ColorTestData.expectedCounts.size, 10000)
 
     streams.close()
+    sys.addShutdownHook(streams.close())
   }
 
   "test2" in {
@@ -128,11 +123,27 @@ class FavoriteColorCountsSpec extends FreeSpec with MustMatchers with BeforeAndA
                                    "colorcountGroup",
                                    classOf[StringDeserializer].getName,
                                    classOf[LongDeserializer].getName,
-                                   new RecordProcessor)
+                                   new PrintingRecordProcessor)
 
     val l = listener.waitUntilMinKeyValueRecordsReceived(ColorTestData.expectedCounts.size, 10000)
-
+    l foreach println
     streams.close()
+    sys.addShutdownHook(streams.close())
+  }
+
+  "just run - external data" in {
+    val builder =
+      FavoriteColorCounts.createTopologyPeek("favourite-colour-input", "favourite-colour-output") //,
+//                                          "user-keys-and-colours")
+    val topology = builder.build()
+    println("topology: ")
+    println(topology.describe())
+    val streams = new KafkaStreams(topology, conf)
+    streams.cleanUp()
+    streams.start()
+
+    Thread.sleep(600000)
+    sys.addShutdownHook(streams.close())
   }
 }
 

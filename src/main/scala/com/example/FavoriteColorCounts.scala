@@ -2,8 +2,7 @@ package com.example
 
 import com.lightbend.kafka.scala.streams.{ KGroupedTableS, KStreamS, KTableS, StreamsBuilderS }
 import org.apache.kafka.common.serialization.{ Serde, Serdes }
-import org.apache.kafka.streams.KeyValue
-import org.apache.kafka.streams.kstream.{ KStream, Produced }
+import org.apache.kafka.streams.kstream.Produced
 
 object FavoriteColorCounts {
 
@@ -14,20 +13,50 @@ object FavoriteColorCounts {
   val produced: Produced[String, Long] =
     Produced.`with`(Serdes.String(), longSerde)
 
-  // assuming key is username & value is color
+  // TODO - this topology correctly increases the values but does not decrease them as required, e.g.
+  // x:red, y:blue => red:1 | blue:1
+  // y: red => red:2 | but no blue:0 as would be correct
+  // topology2 works correctly
+
   def createTopology(sourceTopic: String, targetTopic: String): StreamsBuilderS = {
     println(s"creating builder for $sourceTopic / $targetTopic")
     val builder: StreamsBuilderS = new StreamsBuilderS
 
     val msgs = builder.stream[String, String](sourceTopic)
     msgs
-      .filter((k, v) => legalColors.contains(v))
+      .filter((_, v) => v.contains(","))
+      .selectKey[String]((_, v) => v.split(",")(0).toLowerCase)
+      .mapValues[String]((value: String) => value.split(",")(1).toLowerCase)
+      .filter((_, v) => legalColors.contains(v))
       .selectKey((_, v) => v)
-      .peek((k, v) => println(s"processing $k:$v"))
       .groupByKey()
       .count("byColors")
       .toStream
-      .peek((k, v) => s"writing out: $k:$v ")
+      .to(targetTopic, produced)
+
+    builder
+  }
+
+  def createTopologyPeek(sourceTopic: String, targetTopic: String): StreamsBuilderS = {
+    println(s"creating builder for $sourceTopic / $targetTopic")
+    val builder: StreamsBuilderS = new StreamsBuilderS
+
+    val msgs = builder.stream[String, String](sourceTopic)
+    msgs
+      .peek((k, v) => println(s"received $k:$v"))
+      .filter((_, v) => v.contains(","))
+      .selectKey[String]((_, v) => v.split(",")(0).toLowerCase)
+      .mapValues[String](
+        (value: String) => value.split(",").tail.headOption.map(_.toLowerCase).orNull
+      )
+      .filter((_, v) => legalColors.contains(v) || v == null)
+      .peek((k, v) => println(s"filtered $k:$v"))
+      .selectKey((_, v) => v)
+      .peek((k, v) => println(s"selected $k:$v"))
+      .groupByKey()
+      .count("byColors")
+      .toStream
+      .peek((k, v) => s"writing out: $k:$v ") // the data gets written, but 'peek' does not print anything
       .to(targetTopic, produced)
 
     builder
