@@ -17,6 +17,7 @@ lazy val kfkstreams = project
       library.circeGeneric,
       library.circeParser,
       library.circeJ8,
+      library.circeJackson,
       library.scalaCheck % Test,
       library.scalaTest  % Test
     ),
@@ -52,6 +53,7 @@ lazy val library = new {
   val circeGeneric = "io.circe" %% "circe-generic" % Version.circe
   val circeParser  = "io.circe" %% "circe-parser"  % Version.circe
   val circeJ8      = "io.circe" %% "circe-java8"   % Version.circe
+  val circeJackson = "io.circe" %% "circe-jackson" % Version.circe
 
   val kafkabase = "de.exellio" %% "kafkabase" % Version.kafkabase
 
