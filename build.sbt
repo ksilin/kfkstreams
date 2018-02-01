@@ -17,7 +17,7 @@ lazy val kfkstreams = project
       library.circeGeneric,
       library.circeParser,
       library.circeJ8,
-      library.circeJackson,
+      library.jacksonScala,
       library.scalaCheck % Test,
       library.scalaTest  % Test
     ),
@@ -49,11 +49,11 @@ lazy val library = new {
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging"  % Version.scalaLogging
   val catsCore     = "org.typelevel"              %% "cats-core"      % "1.0.0"
 
-  val circe        = "io.circe" %% "circe-core"    % Version.circe
-  val circeGeneric = "io.circe" %% "circe-generic" % Version.circe
-  val circeParser  = "io.circe" %% "circe-parser"  % Version.circe
-  val circeJ8      = "io.circe" %% "circe-java8"   % Version.circe
-  val circeJackson = "io.circe" %% "circe-jackson" % Version.circe
+  val circe        = "io.circe"                     %% "circe-core"           % Version.circe
+  val circeGeneric = "io.circe"                     %% "circe-generic"        % Version.circe
+  val circeParser  = "io.circe"                     %% "circe-parser"         % Version.circe
+  val circeJ8      = "io.circe"                     %% "circe-java8"          % Version.circe
+  val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.4"
 
   val kafkabase = "de.exellio" %% "kafkabase" % Version.kafkabase
 
