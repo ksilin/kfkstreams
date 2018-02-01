@@ -18,6 +18,9 @@ lazy val kfkstreams = project
       library.circeParser,
       library.circeJ8,
       library.jacksonScala,
+      library.jacksonJ8,
+      library.kafkaSerCore,
+      library.kafkaSerCirce,
       library.scalaCheck % Test,
       library.scalaTest  % Test
     ),
@@ -31,8 +34,9 @@ lazy val library = new {
     val logback      = "1.2.3"
     val scalaLogging = "3.7.2"
 
-    val kafkabase = "0.1.6"
-    val circe     = "0.9.1"
+    val kafkabase          = "0.1.6"
+    val circe              = "0.9.1"
+    val kafkaSerialization = "0.3.3"
 
     val kafkaStreamsScala = "0.1.1"
     val kafka             = "1.0.0"
@@ -49,11 +53,15 @@ lazy val library = new {
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging"  % Version.scalaLogging
   val catsCore     = "org.typelevel"              %% "cats-core"      % "1.0.0"
 
-  val circe        = "io.circe"                     %% "circe-core"           % Version.circe
-  val circeGeneric = "io.circe"                     %% "circe-generic"        % Version.circe
-  val circeParser  = "io.circe"                     %% "circe-parser"         % Version.circe
-  val circeJ8      = "io.circe"                     %% "circe-java8"          % Version.circe
-  val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.4"
+  val circe        = "io.circe"                       %% "circe-core"             % Version.circe
+  val circeGeneric = "io.circe"                       %% "circe-generic"          % Version.circe
+  val circeParser  = "io.circe"                       %% "circe-parser"           % Version.circe
+  val circeJ8      = "io.circe"                       %% "circe-java8"            % Version.circe
+  val jacksonScala = "com.fasterxml.jackson.module"   %% "jackson-module-scala"   % "2.9.4"
+  val jacksonJ8    = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.9.4"
+
+  val kafkaSerCore  = "com.ovoenergy" %% "kafka-serialization-core"  % Version.kafkaSerialization
+  val kafkaSerCirce = "com.ovoenergy" %% "kafka-serialization-circe" % Version.kafkaSerialization
 
   val kafkabase = "de.exellio" %% "kafkabase" % Version.kafkabase
 
@@ -88,7 +96,8 @@ lazy val commonSettings =
       "-Ypartial-unification" // allow the compiler to unify type constructors of different arities
     ),
     unmanagedSourceDirectories.in(Compile) := Seq(scalaSource.in(Compile).value),
-    unmanagedSourceDirectories.in(Test) := Seq(scalaSource.in(Test).value)
+    unmanagedSourceDirectories.in(Test) := Seq(scalaSource.in(Test).value),
+    resolvers += Resolver.bintrayRepo("ovotech", "maven")
   )
 
 lazy val scalafmtSettings =
