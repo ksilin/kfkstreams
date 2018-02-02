@@ -3,7 +3,9 @@ package com.example
 import java.util.Properties
 
 import com.fasterxml.jackson.databind.JsonNode
+import de.exellio.kafkabase.KafkaSettings
 import de.exellio.kafkabase.test.{ KafkaTestHelper, MessageListener }
+import org.apache.kafka.clients.admin.{ AdminClient, AdminClientConfig }
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.{ Serde, Serdes, StringDeserializer }
@@ -41,6 +43,10 @@ class BankBalanceOvoSpec
   )
   val topoProps: Properties = topoPropMap.toProps
 
+  val props = new Properties()
+  props.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+  val admin: AdminClient = AdminClient.create(props)
+
   override def beforeAll(): Unit = {
     recreateTopic(zkHost, inTopic)
     recreateTopic(zkHost, outTopic)
@@ -66,6 +72,29 @@ class BankBalanceOvoSpec
 
     Thread.sleep(1000)
     val l = listener.waitUntilMinKeyValueRecordsReceived(msgCount, 10000)
+  }
+
+  "must create and run topology" in {
+
+    val created: Seq[RecordMetadata] = balance.createRecords(inTopic, msgCount)
+//    created foreach { meta =>
+//      println(s"${meta.partition()}|${meta.offset()}|${meta.timestamp()}")
+//    }
+
+    Thread.sleep(1000)
+
+    val topo = balance.createTopology(inTopic, outTopic).build()
+    println("topo: ")
+    println(topo.describe())
+    val streams = new KafkaStreams(topo, topoProps)
+    streams.cleanUp()
+    streams.start()
+
+    Thread.sleep(1000)
+  }
+
+  "must delete unused topics" in {
+    val deleted: Unit = deleteTopicByPrefix(admin, "favourite")
   }
 
 }
